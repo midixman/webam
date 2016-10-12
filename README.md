@@ -7,7 +7,11 @@ To incorporate it in an HTML file, a JavaScript file has been created with
 
     tsc webam.ts -t es5
 
-and taking the last line (exports.WebAudioMidi = WebAudioMidi;) out from the resulting webam.js.
+with tsc v2.0.3 and taking the last line
+```js
+exports.WebAudioMidi = WebAudioMidi;
+```
+out from the resulting webam.js.
 An HTML file (index.html) has been provided as an example.  WebAM was tested using only the Chrome browser (Version 53.0.2785.143 m (64-bit) on Windows PC).
 
 ## How to Use
@@ -20,7 +24,7 @@ function callback() {
 ```
 
 ## Installation on Windows
-Before WebAM is completed, on Windows you can use WebAM by using the Web MIDI API part (instead of Web Audio API) by installing [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth); some explanation is provided at [Enabling Sound in Windows](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/).  Hopefully, the Windows built-in Microsoft GS Wavetable SW Synth will be re-enabled some time in the future as discussed in [Web MIDI Does Not Work on 43.0.2357.130](https://bugs.chromium.org/p/chromium/issues/detail?id=503270).
+Before WebAM is completed, on Windows you can use WebAM using the Web MIDI API part (instead of Web Audio API) by installing [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth); some explanation is provided at [Enabling Sound in Windows](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/).  Hopefully, the Windows built-in Microsoft GS Wavetable SW Synth will be re-enabled some time in the future as discussed in [Web MIDI Does Not Work on 43.0.2357.130](https://bugs.chromium.org/p/chromium/issues/detail?id=503270).
 
 ## API
 ### Creation
@@ -73,7 +77,7 @@ noteToKey(number) // 60 -> 'C4'
 keyToNote(string) // 'bb7' -> 106
 ```
 
-In noteToKey(), it is assumed that the input is within the 0 to 127 range.  In keyToNote(), it is assumed that the first character is A to G (either upper or lower case), followed by some '#' (which represents sharp) or 'b' (which represents flat), and ended by an integer (which can be negative).
+In noteToKey(), it is assumed that the input is within the 0 to 127 range.  In keyToNote(), it is assumed that the first character is A to G (either upper or lower case), possibly followed by some '#' (which represents sharp) or 'b' (which represents flat), and ended by an integer (which can be negative).
 
 ### Sound Generation Methods
 ```js
