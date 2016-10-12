@@ -75,7 +75,7 @@ keyToNote(string) // 'bb7' -> 106
 
 In noteToKey(), it is assumed that the input is within the 0 to 127 range.  In keyToNote(), it is assumed that the first character is A to G (either upper or lower case), followed by some '#' (which represents sharp) or 'b' (which represents flat), and ended by an integer (which can be negative).
 
-### Music Methods
+### Sound Generation Methods
 ```js
 noteOn  (channel, note,    velocity = wam.dfltNoteOnVel, delay = 0, outIndex = wam.dfltOutIdx)
 noteOff (channel, note,    delay = 0, outIndex = wam.dfltOutIdx, velocity = wam.dfltNoteOffVel)
@@ -88,5 +88,6 @@ programChange(channel, program, delay = 0, outIndex = wam.dfltOutIdx)
 
 In all the methods above, the delay is in milliseconds and all the arguments are numbers (or arrays of numbers).
 
+## License
 Copyright &copy; 2016 William D. Tjokroaminata All Rights Reserved.
 Licensed under the MIT License.
