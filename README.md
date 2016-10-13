@@ -23,6 +23,15 @@ function callback() {
 }
 ```
 
+Instead of using the delay argument, you can use [WAAClock](https://github.com/sebpiq/WAAClock):
+```js
+let clock = new WAAClock(new AudioContext);
+clock.start();
+clock.setTimeout(function() {wam.noteOn (0, 60);}, 1);
+clock.setTimeout(function() {wam.noteOff(0, 60);}, 2);
+```
+The latest was [WAAClock-latest.js](https://github.com/sebpiq/WAAClock/blob/master/dist/WAAClock-latest.js) as of Oct 12, 2016 (release 0.5).
+
 ## Installation on Windows
 Before WebAM is completed, on Windows you can use WebAM using the Web MIDI API part (instead of Web Audio API) by installing [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth); some explanation is provided at [Enabling Sound in Windows](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/).  Hopefully, the Windows built-in Microsoft GS Wavetable SW Synth will be re-enabled some time in the future as discussed in [Web MIDI Does Not Work on 43.0.2357.130](https://bugs.chromium.org/p/chromium/issues/detail?id=503270).
 

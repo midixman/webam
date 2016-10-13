@@ -227,7 +227,7 @@ export class WebAudioMidi {
     this._conlog = true;
     this.testNoteToKey();
     this.testkeyToNote();
-    alert('WebAM tests completed. (See console log or Ctrl + Shift + J in Chrome.)');
+    alert('WebAM tests completed. (See console log or Ctrl+Shift+J in Chrome.)');
     this._conlog = conlog;
   }
   testNoteToKey() {

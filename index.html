@@ -3,9 +3,10 @@
   <head>
     <meta charset="UTF-8">
     <title>WebAM Test</title>
+    <script src="WAAClock-latest.js"></script>
+    <script src="webam.js"></script>
   </head>
   <body>
-    <script src="webam.js"></script>
     <script>
       let wam = new WebAudioMidi(callback, {software: true, conlog: true});
       function callback() {
@@ -18,6 +19,12 @@
         wam.programChange(3, 52);
         wam.chordOn(3, [55, 60, 64], 80, 2000);
         wam.chordOff(3, [55, 60, 64], 3000);
+
+        // Using WAAClock
+        let clock = new WAAClock(new AudioContext);
+        clock.start();
+        clock.setTimeout(function() {wam.noteOn (0, 60);}, 4);
+        clock.setTimeout(function() {wam.noteOff(0, 60);}, 5);
       }
     </script>
   </body>
