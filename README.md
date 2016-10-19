@@ -82,13 +82,13 @@ let wam = new WebAudioMidi(callback, 'sf/Chaos_V20.sf2', {software: true, conlog
 ### Member Accesses
 ```js
 // Read-only
-mAcc       // MIDIAccess object in Web MIDI API
-failureMsg // if mAcc is null, provides the failure message
+mAcc      : any    // MIDIAccess object in Web MIDI API
+failureMsg: string // if mAcc is null, provides the failure message
 
 // Read and write
-dfltOutIdx     // default output port index (0)
-dfltNoteOnVel  // default note on velocity  (80)
-dfltNoteOffVel // default note off velocity (64)
+dfltOutIdx    : number // default output port index (-1); negative means the last one
+dfltNoteOnVel : number // default note on velocity  (80)
+dfltNoteOffVel: number // default note off velocity (64)
 ```
 
 ### List Methods
