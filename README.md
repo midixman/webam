@@ -72,7 +72,7 @@ _callbackFunction_ is a function that WebAM will call(back) once it is ready.
 
 _soundfontURL_ is the URL for the SoundFont file.
 
-In the optioanl _WebamOptions_, "`sysex`" and "`software`" correspond to those in Section 4.2 of Web MIDI API W3C Editor's Draft 09 June 2016 (http://webaudio.github.io/web-midi-api/), whereas "`conlog`" specifies whether WebAM prints to the console log.  All these by default are `false`.
+In the optional _WebamOptions_, "`sysex`" and "`software`" correspond to those in Section 4.2 of Web MIDI API W3C Editor's Draft 09 June 2016 (http://webaudio.github.io/web-midi-api/), whereas "`conlog`" specifies whether WebAM prints to the console log.  All these by default are `false`.
 
 Example:
 ```js
@@ -115,10 +115,10 @@ In `noteToKey()`, it is assumed that the input is within the 0 to 127 range.  In
 
 ### Sound Generation Methods
 ```js
-noteOn  (channel, note,    velocity = wam.dfltNoteOnVel, delay = 0, outIndex = wam.dfltOutIdx): void
+noteOn  (channel, note,    velocity = wam.dfltNoteOnVel, delay = 0, outIndex = wam.dfltOutIdx) : void
 noteOff (channel, note,    delay = 0, outIndex = wam.dfltOutIdx, velocity = wam.dfltNoteOffVel): void
 
-chordOn (channel, notes[], velocity = wam.dfltNoteOnVel, delay = 0, outIndex = wam.dfltOutIdx): void
+chordOn (channel, notes[], velocity = wam.dfltNoteOnVel, delay = 0, outIndex = wam.dfltOutIdx) : void
 chordOff(channel, notes[], delay = 0, outIndex = wam.dfltOutIdx, velocity = wam.dfltNoteOffVel): void
 
 programChange(channel, program, delay = 0, outIndex = wam.dfltOutIdx): void
