@@ -8,16 +8,24 @@
   </head>
   <body>
     <script>
-      let wam = new WebAudioMidi(callback, {software: true, conlog: true});
+      let wam = new WebAudioMidi(callback, 'sf/Chaos_V20.sf2', {software: true, conlog: true});
       function callback() {
         wam.runTests();
         console.log(wam.listMIDIAccessProperties('function'));
         console.log(wam.listOutPorts('function'));
         console.log(wam.listInPorts('function'));
-        wam.noteOn(0, 60);
+
+        alert('Will play soundTestPercussion...');
+        wam.soundTestPercussion(500);
+
+        /*
+        alert('Will play soundTestPrograms...');
+        wam.soundTestPrograms();
+
+        wam.noteOn (0, 60);
         wam.noteOff(0, 60, 1000);
-        wam.programChange(3, 52);
-        wam.chordOn(3, [55, 60, 64], 80, 2000);
+        wam.programChange(3, 53);
+        wam.chordOn (3, [55, 60, 64], 80, 2000);
         wam.chordOff(3, [55, 60, 64], 3000);
 
         // Using WAAClock
@@ -25,6 +33,7 @@
         clock.start();
         clock.setTimeout(function() {wam.noteOn (0, 60);}, 4);
         clock.setTimeout(function() {wam.noteOff(0, 60);}, 5);
+        */
       }
     </script>
   </body>
