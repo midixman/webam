@@ -1249,10 +1249,10 @@ SoundFont.SynthesizerNote.prototype.noteOn = function() {
 
   // filter
   filter = this.filter = ctx.createBiquadFilter();
-  filter.type = filter.LOWPASS;
+  filter.type = 'lowpass'; // modified by midixman
 
   // panpot
-  panner.panningModel = 0;
+  panner.panningModel = 'equalpower'; // modified by midixman
   panner.setPosition(
     Math.sin(this.panpot * Math.PI / 2),
     0,
@@ -2517,7 +2517,7 @@ export class WebAudioMidi {
 	this.putDevicesIntoPorts();
 	this.startLoggingMidiInput();
 	if (this.outPorts.length === 0)
-	  alert('No MIDI output ports! (No sound will be produced.)');
+	  alert('No real MIDI output ports. (Sound will be generated via SoundFont.)');
 
 	if (this._aCtx)
 	  callbackFunc();

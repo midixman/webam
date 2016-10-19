@@ -1086,9 +1086,9 @@ SoundFont.SynthesizerNote.prototype.noteOn = function () {
     outputGain = output.gain;
     // filter
     filter = this.filter = ctx.createBiquadFilter();
-    filter.type = filter.LOWPASS;
+    filter.type = 'lowpass'; // modified by midixman
     // panpot
-    panner.panningModel = 0;
+    panner.panningModel = 'equalpower'; // modified by midixman
     panner.setPosition(Math.sin(this.panpot * Math.PI / 2), 0, Math.cos(this.panpot * Math.PI / 2));
     //---------------------------------------------------------------------------
     // Attack, Decay, Sustain
@@ -2146,7 +2146,7 @@ var WebAudioMidi = (function () {
             _this.putDevicesIntoPorts();
             _this.startLoggingMidiInput();
             if (_this.outPorts.length === 0)
-                alert('No MIDI output ports! (No sound will be produced.)');
+                alert('No real MIDI output ports. (Sound will be generated via SoundFont.)');
             if (_this._aCtx)
                 callbackFunc();
         }, function (msg) {
