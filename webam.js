@@ -1094,13 +1094,22 @@ SoundFont.SynthesizerNote.prototype.noteOn = function () {
     // Attack, Decay, Sustain
     //---------------------------------------------------------------------------
     outputGain.setValueAtTime(0, now);
-    outputGain.linearRampToValueAtTime(this.volume * (this.velocity / 127), volAttack);
-    outputGain.linearRampToValueAtTime(this.volume * (1 - instrument['volSustain']), volDecay);
+    //  outputGain.linearRampToValueAtTime(this.volume * (this.velocity / 127), volAttack); // deleted by midixman
+    outputGain.linearRampToValueAtTime(this.volume * Math.pow(this.velocity / 127, 2.5), volAttack); // added by midixman
+    //  outputGain.linearRampToValueAtTime(this.volume * (1 - instrument['volSustain']), volDecay); // deleted by midixman
+    // Added by midixman
+    if (instrument['initialFilterQ'] * Math.pow(10, 200) > 1e100)
+        instrument['initialFilterQ'] = 0;
     filter.Q.setValueAtTime(instrument['initialFilterQ'] * Math.pow(10, 200), now);
     baseFreq = amountToFreq(instrument['initialFilterFc']);
     peekFreq = amountToFreq(instrument['initialFilterFc'] + instrument['modEnvToFilterFc']);
     sustainFreq = baseFreq + (peekFreq - baseFreq) * (1 - instrument['modSustain']);
     filter.frequency.setValueAtTime(baseFreq, now);
+    // Added by midixman
+    if (peekFreq > 22050)
+        peekFreq = 22050;
+    if (sustainFreq > 22050)
+        sustainFreq = 22050;
     filter.frequency.linearRampToValueAtTime(peekFreq, modAttack);
     filter.frequency.linearRampToValueAtTime(sustainFreq, modDecay);
     /**
@@ -2362,19 +2371,37 @@ var WebAudioMidi = (function () {
             this.clog('\t', k, '->', this.keyToNote(k));
         }
     };
-    WebAudioMidi.prototype.soundTestPercussion = function (delay) {
-        if (delay === void 0) { delay = 1000; }
+    WebAudioMidi.prototype.soundTestPercussion = function (interval) {
+        if (interval === void 0) { interval = 1000; }
         for (var n = 27, i = 0; n <= 87; ++n, ++i) {
-            this.noteOn(9, n, 127, i * delay);
-            this.noteOff(9, n, (i + 0.9) * delay);
+            this.noteOn(9, n, 127, i * interval);
+            this.noteOff(9, n, (i + 0.9) * interval);
         }
     };
-    WebAudioMidi.prototype.soundTestPrograms = function (delay) {
-        if (delay === void 0) { delay = 1000; }
+    WebAudioMidi.prototype.soundTestPrograms = function (interval) {
+        if (interval === void 0) { interval = 1000; }
         for (var p = 0, i = 0; p < 128; ++p, ++i) {
-            this.programChange(0, p, i * delay);
-            this.noteOn(0, 60, 127, i * delay);
-            this.noteOff(0, 60, (i + 0.9) * delay);
+            this.programChange(0, p, i * interval);
+            this.noteOn(0, 60, 127, i * interval);
+            this.noteOff(0, 60, (i + 0.9) * interval);
+        }
+    };
+    WebAudioMidi.prototype.soundTestNotes = function (interval, program) {
+        if (interval === void 0) { interval = 1000; }
+        if (program === void 0) { program = 0; }
+        this.programChange(0, program);
+        for (var n = 0, i = 0; n < 128; ++n, ++i) {
+            this.noteOn(0, n, 127, i * interval);
+            this.noteOff(0, n, (i + 0.9) * interval);
+        }
+    };
+    WebAudioMidi.prototype.soundTestVelocities = function (interval, program) {
+        if (interval === void 0) { interval = 1000; }
+        if (program === void 0) { program = 0; }
+        this.programChange(0, program);
+        for (var v = 7, i = 0; v < 128; v += 8, ++i) {
+            this.noteOn(0, 60, v, i * interval);
+            this.noteOff(0, 60, (i + 0.9) * interval);
         }
     };
     //================================================================================================

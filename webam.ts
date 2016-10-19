@@ -1263,14 +1263,26 @@ SoundFont.SynthesizerNote.prototype.noteOn = function() {
   // Attack, Decay, Sustain
   //---------------------------------------------------------------------------
   outputGain.setValueAtTime(0, now);
-  outputGain.linearRampToValueAtTime(this.volume * (this.velocity / 127), volAttack);
-  outputGain.linearRampToValueAtTime(this.volume * (1 - instrument['volSustain']), volDecay);
+//  outputGain.linearRampToValueAtTime(this.volume * (this.velocity / 127), volAttack); // deleted by midixman
+  outputGain.linearRampToValueAtTime(this.volume * Math.pow(this.velocity / 127, 2.5), volAttack); // added by midixman
+//  outputGain.linearRampToValueAtTime(this.volume * (1 - instrument['volSustain']), volDecay); // deleted by midixman
+
+  // Added by midixman
+  if (instrument['initialFilterQ'] * Math.pow(10, 200) > 1e100)
+    instrument['initialFilterQ'] = 0;
 
   filter.Q.setValueAtTime(instrument['initialFilterQ'] * Math.pow(10, 200), now);
   baseFreq = amountToFreq(instrument['initialFilterFc']);
   peekFreq = amountToFreq(instrument['initialFilterFc'] + instrument['modEnvToFilterFc']);
   sustainFreq = baseFreq + (peekFreq - baseFreq) * (1 - instrument['modSustain']);
   filter.frequency.setValueAtTime(baseFreq, now);
+
+  // Added by midixman
+  if (peekFreq > 22050)
+    peekFreq = 22050;
+  if (sustainFreq > 22050)
+    sustainFreq = 22050;
+
   filter.frequency.linearRampToValueAtTime(peekFreq, modAttack);
   filter.frequency.linearRampToValueAtTime(sustainFreq, modDecay);
 
@@ -2716,17 +2728,31 @@ export class WebAudioMidi {
       this.clog('\t', k, '->', this.keyToNote(k));
     }
   }
-  soundTestPercussion(delay: number = 1000) {
+  soundTestPercussion(interval: number = 1000) {
     for (let n = 27, i = 0; n <= 87; ++n, ++i) {
-      this.noteOn(9, n, 127, i * delay);
-      this.noteOff(9, n, (i + 0.9) * delay)
+      this.noteOn (9, n, 127, i * interval);
+      this.noteOff(9, n, (i + 0.9) * interval);
     }
   }
-  soundTestPrograms(delay: number = 1000) {
+  soundTestPrograms(interval: number = 1000) {
     for (let p = 0, i = 0; p < 128; ++p, ++i) {
-      this.programChange(0, p, i * delay);
-      this.noteOn(0, 60, 127, i * delay);
-      this.noteOff(0, 60, (i + 0.9) * delay);
+      this.programChange(0, p, i * interval);
+      this.noteOn (0, 60, 127, i * interval);
+      this.noteOff(0, 60, (i + 0.9) * interval);
+    }
+  }
+  soundTestNotes(interval: number = 1000, program: number = 0) {
+    this.programChange(0, program);
+    for (let n = 0, i = 0; n < 128; ++n, ++i) {
+      this.noteOn (0, n, 127, i * interval);
+      this.noteOff(0, n, (i + 0.9) * interval);
+    }
+  }
+  soundTestVelocities(interval: number = 1000, program: number = 0) {
+    this.programChange(0, program);
+    for (let v = 7, i = 0; v < 128; v += 8, ++i) {
+      this.noteOn (0, 60, v, i * interval);
+      this.noteOff(0, 60, (i + 0.9) * interval);
     }
   }
 

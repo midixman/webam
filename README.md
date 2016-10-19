@@ -1,6 +1,8 @@
 # WebAM
 WebAM is "**Web** **A**udio and **M**IDI" in TypeScript/JavaScript; currently the emphasis is on General MIDI interactive playback using _SoundFont_ (__.sf2__) files (and it is not intended to play General MIDI files!)
 
+Currently the timing is provided via [WAAClock](https://github.com/sebpiq/WAAClock) and the SoundFont processing is based on [sf2synth.js](https://github.com/gree/sf2synth.js) (with some fixes).
+
 ## Files
 The source code of WebAM is __webam.ts__.
 To incorporate it in an HTML file, a JavaScript file has been created with
@@ -45,7 +47,9 @@ In Windows you can use WebAM using the Web MIDI API part (instead of Web Audio A
 Without any MIDI devices connected, WebAM will put a notification like "No real MIDI output ports. (Sound will be generated via SoundFont.)".
 
 ## SoundFont Files
-For WebAM to work in any device under Chrome browser, we have to provide a General MIDI SoundFont file.  Here, we have used _Chaos_V20.sf2_ file (11.9 MB).  In [Enabling Sound in Windows](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/), they use _TimGM6mb.sf2_ (5.9 MB) which is one of the smallest SoundFont files.  [sf2synth.js](https://github.com/gree/sf2synth.js), the current basis for the WebAM's Web Audio API part, uses _A320U.sf2_ file (9.5 MB). _Chaos_V20.sf2_ file was chosen because it is relatively small (some General MIDI SoundFont file sizes are about 1 TB!) and in my opinion, it has the best percussion sounds relative to its size.  You may experiment with other General MIDI SoundFont files by searching them in the Internet.
+For WebAM to work on any device under Chrome browser, we have to provide a General MIDI SoundFont file.  Here, we have used _Chaos_V20.sf2_ (11.9 MB).  In [Enabling Sound in Windows](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/), they use _TimGM6mb.sf2_ (5.9 MB) which is one of the smallest SoundFont files.  [sf2synth.js](https://github.com/gree/sf2synth.js), the current basis for the WebAM's Web Audio API part, uses _A320U.sf2_ (9.5 MB).
+
+_Chaos_V20.sf2_ was chosen because it is relatively small (some General MIDI SoundFont file sizes are about 1 TB!) and in my opinion, it has the best percussion sounds relative to its size.  You may experiment with other General MIDI SoundFont files by searching them in the Internet.
 
 ## API
 ### Creation
