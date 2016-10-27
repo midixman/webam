@@ -59,6 +59,9 @@ The latest was [WAAClock-latest.js](https://github.com/sebpiq/WAAClock/blob/mast
 
 **_NOTE: Because requestAnimationFrame is used for the MusicEngine, the WebAM browser tab has to be in focus for it to play normally.  (It cannot be in the background.)_**
 
+## Similar Projects
+* [SimpleSoundFontSynthHost](https://github.com/notator/SimpleSoundFontSynthHost)
+
 ## Installation in Windows
 In Windows you can use WebAM using the Web MIDI API part (instead of Web Audio API) by installing [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth); some explanations are provided at [Enabling Sound in Windows at DrawMusic website](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/).  Hopefully, the Windows built-in _Microsoft GS Wavetable SW Synth_ will be re-enabled by Google at some time in the future as discussed in "[Web MIDI Does Not Work on 43.0.2357.130](https://bugs.chromium.org/p/chromium/issues/detail?id=503270)".
 
