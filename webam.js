@@ -1,6 +1,16 @@
 // ------- top of file -------
 "use strict";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                            //
+// WebAM                                                                                                                      //
+// https://github.com/midixman/webam                                                                                          //
+//                                                                                                                            //
+// MIT License                                                                                                                //
+//                                                                                                                            //
+// Copyright (c) 2016 William D. Tjokroaminata All Rights Reserved.                                                           //
+//                                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Globals
 var Riff = {};
 var SoundFont = {};
@@ -2117,26 +2127,35 @@ var WmlDevice = (function () {
     return WmlDevice;
 }());
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 var WebAudioMidi = (function () {
     function WebAudioMidi(callbackFunc, soundfontUrl, opt) {
         var _this = this;
         if (opt === void 0) { opt = null; }
-        this._conlog = false; // flag whether console log is printed or not
-        this._mAcc = null; // MIDI Access
-        this._failureMsg = ''; // message of failure to obtain MIDI Access
-        this._wml = null; // Web MIDI Link
-        this._aCtx = null; // Audio Context (for currentTime)
-        this.clock = null; // WAAClock
+        this.cnlog = false; // flag whether console log is printed or not
+        this.scnlog = false; // flag whether console log is printed or not for send
+        this.mAcc = null; // MIDI Access
+        this.falrMsg = ''; // message of failure to obtain MIDI Access
+        this.sWml = null; // SoundFont Web MIDI Link
+        this.aCtx = null; // Audio Context (for currentTime)
+        this.clck = null; // WAAClock
+        this.mEng = null; // music engine
         this._dfltOutIdx = -1; // default index of out port (negative means the last one)
         this._thruOutIdx = 0; // index of out port for MIDI thru
         this._dfltNoteOnVel = 80; // default note off velocity
         this._dfltNoteOffVel = 64; // default note off velocity
+        this._dfltChnl = 0; // default MIDI channel
         this.outDevices = []; // output devices
         this.inDevices = []; // input devices
         this.outPorts = []; // output ports: WML is always the last one
         this.inPorts = []; // input ports
-        if (opt && opt.conlog)
-            this._conlog = true;
+        if (opt && opt.conolog) {
+            this.cnlog = true;
+            this.scnlog = false;
+        }
         this.clog('WebAudioMidi is being created...');
         // Web MIDI API
         var midiOpt = {};
@@ -2150,44 +2169,100 @@ var WebAudioMidi = (function () {
         }
         navigator.requestMIDIAccess(midiOpt).then(function (midiAccess) {
             _this.clog('MIDI ready!');
-            _this._mAcc = midiAccess;
+            _this.mAcc = midiAccess;
             _this.storeDevices();
             _this.putDevicesIntoPorts();
             _this.startLoggingMidiInput();
             if (_this.outPorts.length === 0)
                 alert('No real MIDI output ports. (Sound will be generated via SoundFont.)');
-            if (_this._aCtx)
+            if (_this.aCtx) {
+                if (_this.mEng)
+                    _this.mEng.webamIsReady();
                 callbackFunc();
+            }
         }, function (msg) {
             alert('Failed to get MIDI access: ' + msg);
-            _this._failureMsg = msg;
-            if (_this._aCtx)
+            _this.falrMsg = msg;
+            if (_this.aCtx) {
+                if (_this.mEng)
+                    _this.mEng.webamIsReady();
                 callbackFunc();
+            }
         });
         // Web Audio API
-        this._wml = new SoundFont.WebMidiLink();
-        this._wml.setLoadCallback(function (arraybufer) {
+        this.sWml = new SoundFont.WebMidiLink();
+        this.sWml.setLoadCallback(function (arraybufer) {
             _this.clog('WebMidiLink ready!');
-            _this._aCtx = _this._wml.synth.ctx;
+            _this.aCtx = _this.sWml.synth.ctx;
             _this.putWmlIntoLastPort();
-            _this.clock = new WAAClock(_this._aCtx);
-            _this.clock.start();
-            if (_this._mAcc || _this.failureMsg)
+            _this.clck = new WAAClock(_this.aCtx);
+            if (!_this.mEng)
+                _this.clck.start();
+            if (_this.mAcc || _this.failureMsg) {
+                if (_this.mEng)
+                    _this.mEng.webamIsReady();
                 callbackFunc();
+            }
         });
-        this._wml.setup(soundfontUrl);
+        this.sWml.setup(soundfontUrl);
+        // Music Engine
+        if (opt && opt.engine) {
+            this.clog('MusicEngine is being created...');
+            this.mEng = new MusicEngine(this);
+        }
     }
-    Object.defineProperty(WebAudioMidi.prototype, "mAcc", {
+    Object.defineProperty(WebAudioMidi.prototype, "conolog", {
         //----------------------------------------------------------------------------
         get: function () {
-            return this._mAcc;
+            return this.cnlog;
+        },
+        set: function (bln) {
+            this.cnlog = bln;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebAudioMidi.prototype, "sconolog", {
+        get: function () {
+            return this.scnlog;
+        },
+        set: function (bln) {
+            this.scnlog = bln;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebAudioMidi.prototype, "mAccess", {
+        get: function () {
+            return this.mAcc;
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(WebAudioMidi.prototype, "failureMsg", {
         get: function () {
-            return this._failureMsg;
+            return this.falrMsg;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebAudioMidi.prototype, "audioCtx", {
+        get: function () {
+            return this.aCtx;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebAudioMidi.prototype, "wClock", {
+        get: function () {
+            return this.clck;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebAudioMidi.prototype, "musicEngn", {
+        get: function () {
+            return this.mEng;
         },
         enumerable: true,
         configurable: true
@@ -2218,6 +2293,16 @@ var WebAudioMidi = (function () {
         },
         set: function (num) {
             this._dfltNoteOffVel = num;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebAudioMidi.prototype, "dfltChnl", {
+        get: function () {
+            return this._dfltChnl;
+        },
+        set: function (num) {
+            this._dfltChnl = num;
         },
         enumerable: true,
         configurable: true
@@ -2262,6 +2347,42 @@ var WebAudioMidi = (function () {
         if (outIndex === void 0) { outIndex = this._dfltOutIdx; }
         this.send([0xC0 + channel, program], delay, outIndex);
     };
+    WebAudioMidi.prototype.send = function (msg, delay, outIndex) {
+        var _this = this;
+        if (delay === void 0) { delay = 0; }
+        if (outIndex === void 0) { outIndex = this._dfltOutIdx; }
+        // delay in milliseconds
+        this.sclog('Sending [' + msg + '] delay ' + delay + ' msec to index ' + outIndex);
+        var port = this.outPorts[outIndex].port;
+        if (port) {
+            var timeStamp = window.performance.now() + delay;
+            port.send(msg, timeStamp);
+            this.sclog('timeStamp = ' + timeStamp + ' msec');
+        }
+        else {
+            var startTime = this.aCtx.currentTime + (delay / 1000);
+            this.clck.setTimeout(function () { _this.sWml.processMidiMessage(msg); }, delay / 1000);
+            this.sclog('startTime = ' + startTime + ' sec');
+        }
+    };
+    WebAudioMidi.prototype.sendAt = function (msg, at, outIndex) {
+        var _this = this;
+        if (at === void 0) { at = this.aCtx.currentTime; }
+        if (outIndex === void 0) { outIndex = this._dfltOutIdx; }
+        // at in seconds
+        if (!at)
+            at = this.aCtx.currentTime;
+        this.sclog('Sending [' + msg + '] to index ' + outIndex + ' at ' + at + ' sec');
+        var port = this.outPorts[outIndex].port;
+        if (port) {
+            var timeStamp = at / 1000;
+            port.send(msg, timeStamp);
+        }
+        else {
+            var startTime = at;
+            this.clck.callbackAtTime(function () { _this.sWml.processMidiMessage(msg); }, startTime);
+        }
+    };
     //----------------------------------------------------------------------------
     WebAudioMidi.prototype.noteToKey = function (num) {
         // C4 is the "middle C": C-1(0), ..., A0(21), ..., C4(60), ..., C8(108), ..., G9(127)
@@ -2290,28 +2411,28 @@ var WebAudioMidi = (function () {
     WebAudioMidi.prototype.listMIDIAccessProperties = function (excludedType) {
         if (excludedType === void 0) { excludedType = ''; }
         var str = 'MIDIAccess:\n';
-        if (!this._mAcc) {
-            str += '\t' + this._failureMsg;
+        if (!this.mAcc) {
+            str += '\t' + this.falrMsg;
             return str;
         }
-        for (var p in this._mAcc)
-            if (typeof this._mAcc[p] !== excludedType)
-                str += '\t' + p + ' (' + (typeof this._mAcc[p]) + '): "' + this._mAcc[p] + '"\n';
+        for (var p in this.mAcc)
+            if (typeof this.mAcc[p] !== excludedType)
+                str += '\t' + p + ' (' + (typeof this.mAcc[p]) + '): "' + this.mAcc[p] + '"\n';
         str += 'MIDIAccess.outputs:\n';
-        for (var p in this._mAcc.outputs)
-            if (typeof this._mAcc.outputs[p] !== excludedType)
-                str += '\t' + p + ' (' + (typeof this._mAcc.outputs[p]) + '): "' + this._mAcc.outputs[p] + '"\n';
-        this._mAcc.outputs.forEach(function (output, key) {
+        for (var p in this.mAcc.outputs)
+            if (typeof this.mAcc.outputs[p] !== excludedType)
+                str += '\t' + p + ' (' + (typeof this.mAcc.outputs[p]) + '): "' + this.mAcc.outputs[p] + '"\n';
+        this.mAcc.outputs.forEach(function (output, key) {
             str += 'MIDIOutput ' + key + ':\n';
             for (var p in output)
                 if (typeof output[p] !== excludedType)
                     str += '\t' + p + ' (' + (typeof output[p]) + '): "' + output[p] + '"\n';
         });
         str += 'MIDIAccess.inputs:\n';
-        for (var p in this._mAcc.inputs)
-            if (typeof this._mAcc.inputs[p] !== excludedType)
-                str += '\t' + p + ' (' + (typeof this._mAcc.inputs[p]) + '): "' + this._mAcc.inputs[p] + '"\n';
-        this._mAcc.inputs.forEach(function (input, key) {
+        for (var p in this.mAcc.inputs)
+            if (typeof this.mAcc.inputs[p] !== excludedType)
+                str += '\t' + p + ' (' + (typeof this.mAcc.inputs[p]) + '): "' + this.mAcc.inputs[p] + '"\n';
+        this.mAcc.inputs.forEach(function (input, key) {
             str += 'MIDIInput ' + key + ':\n';
             for (var p in input)
                 if (typeof input[p] !== excludedType)
@@ -2350,12 +2471,12 @@ var WebAudioMidi = (function () {
     //================================================================================================
     // Tests
     WebAudioMidi.prototype.runTests = function () {
-        var conlog = this._conlog;
-        this._conlog = true;
+        var cnlog = this.cnlog;
+        this.cnlog = true;
         this.testNoteToKey();
         this.testKeyToNote();
         alert('WebAM tests completed. (See console log or Ctrl+Shift+J in Chrome.)');
-        this._conlog = conlog;
+        this.cnlog = cnlog;
     };
     WebAudioMidi.prototype.testNoteToKey = function () {
         this.clog('Test noteToKey():');
@@ -2411,16 +2532,24 @@ var WebAudioMidi = (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i - 0] = arguments[_i];
         }
-        if (this._conlog)
+        if (this.cnlog)
+            console.log('WAM: ' + args.join(' '));
+    };
+    WebAudioMidi.prototype.sclog = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        if (this.scnlog)
             console.log('WAM: ' + args.join(' '));
     };
     WebAudioMidi.prototype.storeDevices = function () {
         var _this = this;
         // The index is the key or ID
-        this._mAcc.outputs.forEach(function (device, key) {
+        this.mAcc.outputs.forEach(function (device, key) {
             _this.outDevices[key] = device;
         });
-        this._mAcc.inputs.forEach(function (device, key) {
+        this.mAcc.inputs.forEach(function (device, key) {
             _this.inDevices[key] = device;
         });
     };
@@ -2431,7 +2560,7 @@ var WebAudioMidi = (function () {
         if (this._dfltOutIdx < 0)
             this._dfltOutIdx = idx;
         for (var d in this.outDevices)
-            this.outPorts[d] = new MidiPort(this.outDevices[d], this._mAcc.outputs.get(d));
+            this.outPorts[d] = new MidiPort(this.outDevices[d], this.mAcc.outputs.get(d));
         for (var d in this.inDevices)
             this.inPorts[d] = new MidiPort(this.inDevices[d]);
     };
@@ -2446,7 +2575,7 @@ var WebAudioMidi = (function () {
         var _this = this;
         if (deviceId === void 0) { deviceId = -1; }
         if (deviceId < 0)
-            this._mAcc.inputs.forEach(function (input) {
+            this.mAcc.inputs.forEach(function (input) {
                 input.onmidimessage = function (event) {
                     if (!(event.type === 'midimessage' && event.data != '248' && event.data != '254'))
                         return;
@@ -2471,22 +2600,385 @@ var WebAudioMidi = (function () {
             event.target.id + ' (' + event.target.name + ') with timeStamp ' + event.timeStamp + ' (' + event.data.length +
             ' bytes): ' + event.data;
     };
-    WebAudioMidi.prototype.send = function (msg, delay, outIndex) {
-        var _this = this;
-        // delay in milliseconds
-        this.clog('Sending [' + msg + '] delay ' + delay + ' msec to index ' + outIndex);
-        var port = this.outPorts[outIndex].port;
-        if (port) {
-            var timeStamp = window.performance.now() + delay;
-            port.send(msg, timeStamp);
-            this.clog('timeStamp = ' + timeStamp + ' msec');
+    return WebAudioMidi;
+}());
+//------------------------------------------------------------------------------
+var NoteOffData = (function () {
+    function NoteOffData(note, chnl, outIdx) {
+        this.note = note;
+        this.chnl = chnl;
+        this.outIdx = outIdx;
+    }
+    return NoteOffData;
+}());
+var State;
+(function (State) {
+    State[State["Stop"] = 0] = "Stop";
+    State[State["Play"] = 1] = "Play";
+    State[State["Pause"] = 2] = "Pause";
+})(State || (State = {}));
+;
+var Update;
+(function (Update) {
+    Update[Update["Quantize"] = 0] = "Quantize";
+    Update[Update["Beat"] = 1] = "Beat";
+    Update[Update["Measure"] = 2] = "Measure";
+})(Update || (Update = {}));
+;
+var MusicEngine = (function () {
+    function MusicEngine(wam) {
+        this.wam = wam;
+        this.cnlog = false; // flag whether console log is printed or not
+        this.aCtx = null; // Audio Context (for currentTime)
+        this.stte = State.Stop; // state
+        this.quanPqn = 24; // quantization per quarter note
+        this.lookaTime = 0.020; // look ahead time (sec)
+        this.tmpo = 120; // bpm (beats per minute)
+        this.nmrt = 4; // numerator (beat) in time signature
+        this.dnmt = 4; // denominator (note) in time signature
+        this.frmReq = 0; // frame request
+        this.quanEph = 0; // quantization epoch (sec)
+        this.startEph = 0; // epoch when start() occurs (sec)
+        this.quanCtr = 0; // quantization counter
+        this.quanCtrStop = 0; // quantization counter for Stop
+        this.beatCtr = -1; // beat counter
+        this.measCtr = -1; // measure counter
+        this.phrsCtr = 0; // phrase counter
+        this.currTune = null;
+        this.tuneTimes = 1;
+        this.noteOffQ = []; // note off queue
+        this.dummy = 0;
+        this.dummyMax = 0;
+        if (this.wam.conolog)
+            this.cnlog = true;
+        this.changeStateTo(State.Stop);
+        this.quanPerQuarterNote = this.quanPqn;
+        this.lookaheadTime = this.lookaTime;
+        this.tempo = this.tmpo;
+        this.numerator = this.nmrt;
+        this.denominator = this.dnmt;
+        this.initialize();
+    }
+    MusicEngine.prototype.initialize = function () {
+        this.quanEph = 0;
+        this.quanCtr = 0;
+        this.quanCtrStop = 0;
+        this.beatCtr = -1;
+        this.measCtr = -1;
+        this.phrsCtr = 0;
+        if (this.aCtx)
+            this.wam.wClock.stop();
+    };
+    Object.defineProperty(MusicEngine.prototype, "conolog", {
+        //----------------------------------------------------------------------------
+        get: function () {
+            return this.cnlog;
+        },
+        set: function (bln) {
+            this.cnlog = bln;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(MusicEngine.prototype, "webAM", {
+        get: function () {
+            return this.wam;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(MusicEngine.prototype, "quanPerQuarterNote", {
+        get: function () {
+            return this.quanPqn;
+        },
+        set: function (num) {
+            num = parseInt(num.toString());
+            if (num > 0) {
+                this.quanPqn = num;
+                this.clog('quanPqn = ' + this.quanPqn);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(MusicEngine.prototype, "lookaheadTime", {
+        get: function () {
+            return this.lookaTime;
+        },
+        set: function (num) {
+            if (num > 0) {
+                this.lookaTime = num;
+                this.clog('lookaheadTime = ' + this.lookaTime + ' sec');
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(MusicEngine.prototype, "numerator", {
+        get: function () {
+            return this.nmrt;
+        },
+        set: function (num) {
+            num = parseInt(num.toString());
+            if (num > 0) {
+                this.nmrt = num;
+                this.clog('time sig = ' + this.nmrt + '/' + this.dnmt);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(MusicEngine.prototype, "denominator", {
+        get: function () {
+            return this.dnmt;
+        },
+        set: function (num) {
+            num = parseInt(num.toString());
+            if (num > 0) {
+                this.dnmt = num;
+                this.clog('time sig = ' + this.nmrt + '/' + this.dnmt);
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(MusicEngine.prototype, "tempo", {
+        get: function () {
+            return this.tmpo;
+        },
+        set: function (num) {
+            if (num > 0) {
+                this.tmpo = num;
+                this.clog('tempo = ' + this.tmpo + ' bpm');
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    //----------------------------------------------------------------------------
+    MusicEngine.prototype.start = function (times) {
+        if (times === void 0) { times = 1; }
+        if (this.stte != State.Stop)
+            return;
+        this.changeStateTo(State.Play);
+        this.tuneTimes = times;
+        this.wam.wClock.start();
+        this.tuneProgramChange();
+        this.scheduleFrame();
+    };
+    MusicEngine.prototype.pause = function () {
+        if (this.stte != State.Play)
+            return;
+        this.changeStateTo(State.Pause);
+        this.cancelFrame();
+        this.quanEph = 0;
+    };
+    MusicEngine.prototype.resume = function () {
+        if (this.stte != State.Pause)
+            return;
+        this.changeStateTo(State.Play);
+        this.scheduleFrame();
+    };
+    MusicEngine.prototype.stop = function () {
+        if (this.stte == State.Stop)
+            return;
+        this.changeStateTo(State.Stop);
+        this.cancelFrame();
+        this.initialize();
+    };
+    MusicEngine.prototype.load = function (tune) {
+        if (tune.tempo === undefined)
+            tune.tempo = -120;
+        if (tune.numerator === undefined)
+            tune.numerator = -4;
+        if (tune.denominator === undefined)
+            tune.denominator = -4;
+        this.tempo = Math.abs(tune.tempo);
+        this.numerator = Math.abs(tune.numerator);
+        this.denominator = Math.abs(tune.denominator);
+        var quan = this.quanPqn;
+        var measLen = Math.abs(Math.round(tune.numerator * (quan * 4 / tune.denominator)));
+        tune.quanLength = measLen;
+        for (var _i = 0, _a = tune.tracks; _i < _a.length; _i++) {
+            var t = _a[_i];
+            if (t.channel === undefined)
+                t.channel = this.wam.dfltChnl;
+            if (t.pitchChange === undefined)
+                t.pitchChange = true;
+            if (t.outIndex === undefined)
+                t.outIndex = this.wam.dfltOutIdx;
+            t.quanNotes = [];
+            var q = 0; // quantization at
+            var d = void 0; // duration
+            for (var _b = 0, _c = t.notes; _b < _c.length; _b++) {
+                var n = _c[_b];
+                if (n[1])
+                    d = n[1] * 4 * quan;
+                else
+                    d = quan; // default duration
+                if (n[2] === undefined)
+                    n[2] = -1; // default velocity
+                if (n[0] < 0) {
+                    n[2] = 0; // rest
+                    n[0] = 0;
+                }
+                t.quanNotes[q] = [n[0], d, n[2]];
+                q += d;
+            }
+            t.quanNotes.length = q;
+            while (tune.quanLength < t.quanNotes.length)
+                tune.quanLength += measLen;
         }
-        else {
-            var startTime = this._aCtx.currentTime + (delay / 1000);
-            this.clock.setTimeout(function () { _this._wml.processMidiMessage(msg); }, delay / 1000);
-            this.clog('startTime = ' + startTime + ' sec');
+        this.currTune = tune;
+    };
+    //----------------------------------------------------------------------------
+    MusicEngine.prototype.webamIsReady = function () {
+        this.aCtx = this.wam.audioCtx;
+    };
+    //================================================================================================
+    // Private Methods
+    MusicEngine.prototype.clog = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        if (this.cnlog)
+            console.log('ME: ' + args.join(' '));
+    };
+    MusicEngine.prototype.changeStateTo = function (st) {
+        this.stte = st;
+        this.clog('state = ' + State[this.stte]);
+    };
+    //----------------------------------------------------------------------------
+    // The setTimeout part
+    MusicEngine.prototype.scheduleFrame = function () {
+        var _this = this;
+        this.frmReq = (window.requestAnimationFrame(function () {
+            _this.scheduleFrame();
+//        })).data.handleId; // for TypeScript
+        })); // for JavaScript
+        this.scheduleEpoch(this.aCtx.currentTime); // using AudioContext.currentTime
+    };
+    MusicEngine.prototype.cancelFrame = function () {
+        if (this.frmReq) {
+            window.cancelAnimationFrame(this.frmReq);
+            this.frmReq = 0;
         }
     };
-    return WebAudioMidi;
+    // The lookahead part
+    MusicEngine.prototype.scheduleEpoch = function (currTime) {
+        // TBR
+        if (this.dummy) {
+            if (this.dummyMax < currTime - this.dummy)
+                this.dummyMax = currTime - this.dummy;
+        }
+        this.dummy = currTime;
+        if (!this.quanEph) {
+            this.quanEph = currTime;
+            this.startEph = this.quanEph;
+        }
+        var quanTime = (60 / this.tmpo) / (this.quanPqn * 4 / this.dnmt);
+        var lookaheadEph = currTime + this.lookaTime;
+        while (this.quanEph < lookaheadEph && !this.stopScheduled()) {
+            this.handleNoteOffQ(this.quanCtr);
+            if (Math.round(this.quanCtr % (this.quanPqn * 4 / this.dnmt)) == 0) {
+                this.beatCtr++;
+                if (this.beatCtr % this.nmrt == 0) {
+                    this.measCtr++;
+                    this.beatCtr = 0;
+                    this.quanUpdate(Update.Measure);
+                }
+                else
+                    this.quanUpdate(Update.Beat);
+            }
+            else
+                this.quanUpdate(Update.Quantize);
+            this.quanEph += quanTime;
+            this.quanCtr++;
+        }
+        if (this.stopScheduled())
+            this.sendStop(this.quanEph);
+    };
+    //----------------------------------------------------------------------------
+    MusicEngine.prototype.stopScheduled = function () {
+        if (this.quanCtrStop && this.quanCtr >= this.quanCtrStop)
+            return true;
+        else
+            return false;
+    };
+    MusicEngine.prototype.quanUpdate = function (upd) {
+        // TBR
+        if (upd == Update.Beat || upd == Update.Measure)
+            console.log('Meas ' + (this.measCtr + 1) + ' beat ' + (this.beatCtr + 1));
+        if (!this.currTune)
+            return;
+        var quanCtr = this.quanCtr % this.currTune.quanLength;
+        for (var _i = 0, _a = this.currTune.tracks; _i < _a.length; _i++) {
+            var t = _a[_i];
+            var pos = quanCtr % t.quanNotes.length;
+            ;
+            if (t.repeat && t.repeat > 0)
+                if (Math.floor(quanCtr / t.quanNotes.length) >= t.repeat)
+                    pos = t.quanNotes.length;
+            var n = t.quanNotes[pos];
+            if (n) {
+                if (n[0] >= 0)
+                    this.sendNote(n[0], n[1], n[2], t.channel, t.pitchChange, t.outIndex);
+            }
+        }
+        if ((quanCtr + 1) % this.currTune.quanLength == 0) {
+            this.phrsCtr++;
+            if (this.tuneTimes && this.tuneTimes <= this.phrsCtr)
+                this.quanCtrStop = quanCtr + 1; // stop
+        }
+    };
+    MusicEngine.prototype.sendNote = function (note, dura, vel, chnl, pitchChg, outIdx) {
+        // duration is in quantization
+        if (vel === void 0) { vel = this.wam.dfltNoteOnVel; }
+        if (chnl === void 0) { chnl = this.wam.dfltChnl; }
+        if (pitchChg === void 0) { pitchChg = true; }
+        if (outIdx === void 0) { outIdx = this.wam.dfltOutIdx; }
+        if (vel < 0)
+            vel = this.wam.dfltNoteOnVel;
+        else if (vel === 0)
+            return;
+        this.wam.sendAt([0x90 + chnl, note, vel], this.quanEph, outIdx);
+        var ctr = this.quanCtr + dura - 1;
+        if (!this.noteOffQ[ctr])
+            this.noteOffQ[ctr] = [];
+        this.noteOffQ[ctr].push(new NoteOffData(note, chnl, outIdx));
+    };
+    MusicEngine.prototype.handleNoteOffQ = function (ctr) {
+        if (this.noteOffQ[ctr]) {
+            var q = this.noteOffQ[ctr];
+            while (q[0]) {
+                var n = q.shift();
+                this.wam.sendAt([0x80 + n.chnl, n.note, this.wam.dfltNoteOffVel], this.quanEph, n.outIdx);
+            }
+            delete this.noteOffQ[ctr];
+        }
+    };
+    MusicEngine.prototype.sendStop = function (at) {
+        var _this = this;
+        this.wam.wClock.callbackAtTime(function () { _this.stop(); }, at);
+    };
+    MusicEngine.prototype.sendProgramChange = function (prog, chnl, at, outIdx) {
+        if (prog === void 0) { prog = 0; }
+        if (chnl === void 0) { chnl = 0; }
+        if (at === void 0) { at = 0; }
+        if (outIdx === void 0) { outIdx = this.wam.dfltOutIdx; }
+        this.wam.sendAt([0xC0 + chnl, prog], at, outIdx);
+    };
+    MusicEngine.prototype.tuneProgramChange = function (at) {
+        if (at === void 0) { at = 0; }
+        if (!this.currTune)
+            return;
+        for (var _i = 0, _a = this.currTune.tracks; _i < _a.length; _i++) {
+            var t = _a[_i];
+            if (t.program !== undefined)
+                this.sendProgramChange(t.program, t.channel, at, t.outIndex);
+        }
+    };
+    return MusicEngine;
 }());
 // ------- end of file -------

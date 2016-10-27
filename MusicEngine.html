@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>MusicEngine Test</title>
+    <script src="WAAClock-latest.js"></script>
+    <script src="webam.js"></script>
+  </head>
+  <body>
+    <script>
+      let me = (new WebAudioMidi(callback, 'sf/Chaos_V20.sf2', {conolog: true, engine: true})).musicEngn;
+      function callback() {
+        me.load({tempo: 120, tracks:
+                 [{channel: 0, notes: [[60], [64], [65], [67]], program: 53},
+		  {channel: 9, notes: [[36], [-1]], repeat: -1},
+		  {channel: 9, notes: [[-1], [38]], repeat: -1},
+		  {channel: 9, notes: [[42, 1/8]], repeat: -1},
+		  {channel: 2, notes: [[36, 1/8], [48, 1/8]], repeat: -1, program: 32},
+		 ]});
+        setTimeout(() => {me.start(4);}, 2000);
+      }
+    </script>
+  </body>
+</html>

@@ -1,6 +1,17 @@
 // ------- top of file -------
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                            //
+// WebAM                                                                                                                      //
+// https://github.com/midixman/webam                                                                                          //
+//                                                                                                                            //
+// MIT License                                                                                                                //
+//                                                                                                                            //
+// Copyright (c) 2016 William D. Tjokroaminata All Rights Reserved.                                                           //
+//                                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Globals
 
 var Riff: any = {};
@@ -2457,18 +2468,19 @@ THE SOFTWARE.
 declare var WAAClock;
 
 interface CallbackFunc {
-  (): void;
+  () : void;
 }
 
 interface WebamOptions {
-  sysex?:    boolean;
-  software?: boolean;
-  conlog?:   boolean;
+  sysex    ?: boolean;
+  software ?: boolean;
+  conolog  ?: boolean;
+  engine   ?: boolean;
 }
 
 interface MIDIOptions {
-  sysex?:    boolean;
-  software?: boolean;
+  sysex    ?: boolean;
+  software ?: boolean;
 }
 
 class MidiPort {
@@ -2484,20 +2496,29 @@ class WmlDevice {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 export class WebAudioMidi {
-  private _conlog: boolean = false; // flag whether console log is printed or not
+  private cnlog : boolean = false; // flag whether console log is printed or not
+  private scnlog: boolean = false; // flag whether console log is printed or not for send
 
-  private _mAcc      : any    = null; // MIDI Access
-  private _failureMsg: string = '';   // message of failure to obtain MIDI Access
-  private _wml       : any    = null; // Web MIDI Link
-  private _aCtx      : any    = null; // Audio Context (for currentTime)
-  private clock      : any    = null; // WAAClock
+  private mAcc   : any    = null; // MIDI Access
+  private falrMsg: string = '';   // message of failure to obtain MIDI Access
+
+  private sWml: any = null; // SoundFont Web MIDI Link
+  private aCtx: any = null; // Audio Context (for currentTime)
+  private clck: any = null; // WAAClock
+
+  private mEng: MusicEngine = null; // music engine
 
   private _dfltOutIdx    : number = -1; // default index of out port (negative means the last one)
   private _thruOutIdx    : number = 0;  // index of out port for MIDI thru
   private _dfltNoteOnVel : number = 80; // default note off velocity
   private _dfltNoteOffVel: number = 64; // default note off velocity
+  private _dfltChnl      : number = 0;  // default MIDI channel
 
   private outDevices: any[] = [];    // output devices
   private inDevices : any[] = [];    // input devices
@@ -2506,8 +2527,10 @@ export class WebAudioMidi {
   private inPorts : MidiPort[] = []; // input ports
 
   constructor(callbackFunc: CallbackFunc, soundfontUrl: string, opt: WebamOptions = null) {
-    if (opt && opt.conlog)
-      this._conlog = true;
+    if (opt && opt.conolog) {
+      this.cnlog  = true;
+      this.scnlog = false;
+    }
     this.clog('WebAudioMidi is being created...');
 
     // Web MIDI API
@@ -2524,47 +2547,85 @@ export class WebAudioMidi {
     (<any>navigator).requestMIDIAccess(midiOpt).then(
       (midiAccess: any) => {
 	this.clog('MIDI ready!');
-	this._mAcc = midiAccess;
+	this.mAcc = midiAccess;
 	this.storeDevices();
 	this.putDevicesIntoPorts();
 	this.startLoggingMidiInput();
 	if (this.outPorts.length === 0)
 	  alert('No real MIDI output ports. (Sound will be generated via SoundFont.)');
 
-	if (this._aCtx)
+	if (this.aCtx) {
+	  if (this.mEng)
+	    this.mEng.webamIsReady();
 	  callbackFunc();
+	}
       },
       (msg: string) => {
 	alert('Failed to get MIDI access: ' + msg);
-	this._failureMsg = msg;
+	this.falrMsg = msg;
 
-	if (this._aCtx)
+	if (this.aCtx) {
+	  if (this.mEng)
+	    this.mEng.webamIsReady();
 	  callbackFunc();
+	}
       });
 
     // Web Audio API
-    this._wml = new SoundFont.WebMidiLink();
-    this._wml.setLoadCallback((arraybufer) => {
+    this.sWml = new SoundFont.WebMidiLink();
+    this.sWml.setLoadCallback((arraybufer) => {
       this.clog('WebMidiLink ready!');
-      this._aCtx = this._wml.synth.ctx;
+      this.aCtx = this.sWml.synth.ctx;
       this.putWmlIntoLastPort();
 
-      this.clock = new WAAClock(this._aCtx);
-      this.clock.start();
+      this.clck = new WAAClock(this.aCtx);
+      if (! this.mEng)
+	this.clck.start();
 
-      if (this._mAcc || this.failureMsg)
+      if (this.mAcc || this.failureMsg) {
+	if (this.mEng)
+	  this.mEng.webamIsReady();
 	callbackFunc();
+      }
     });
-    this._wml.setup(soundfontUrl);
+    this.sWml.setup(soundfontUrl);
+
+    // Music Engine
+    if (opt && opt.engine) {
+      this.clog('MusicEngine is being created...');
+      this.mEng = new MusicEngine(this);
+    }
   }
 
   //----------------------------------------------------------------------------
 
-  get mAcc(): any {
-    return this._mAcc;
+  get conolog(): boolean {
+    return this.cnlog;
+  }
+  set conolog(bln: boolean) {
+    this.cnlog = bln;
+  }
+  get sconolog(): boolean {
+    return this.scnlog;
+  }
+  set sconolog(bln: boolean) {
+    this.scnlog = bln;
+  }
+
+  get mAccess(): any {
+    return this.mAcc;
   }
   get failureMsg(): string {
-    return this._failureMsg;
+    return this.falrMsg;
+  }
+  get audioCtx(): any {
+    return this.aCtx;
+  }
+  get wClock(): any {
+    return this.clck;
+  }
+  get musicEngn(): MusicEngine {
+    return this.mEng;
   }
 
   get dfltOutIdx(): number {
@@ -2585,6 +2646,13 @@ export class WebAudioMidi {
   set dfltNoteOffVel(num: number) {
     this._dfltNoteOffVel = num;
   }
+  get dfltChnl(): number {
+    return this._dfltChnl;
+  }
+  set dfltChnl(num: number) {
+    this._dfltChnl = num;
+  }
+
   //----------------------------------------------------------------------------
 
   noteOn(channel: number, note: number, velocity: number = this._dfltNoteOnVel, delay: number = 0,
@@ -2611,6 +2679,35 @@ export class WebAudioMidi {
 	   }
   programChange(channel: number, program: number, delay: number = 0, outIndex: number = this._dfltOutIdx): void {
     this.send([0xC0 + channel, program], delay, outIndex);
+  }
+
+  send(msg: any, delay: number = 0, outIndex: number = this._dfltOutIdx): void {
+    // delay in milliseconds
+    this.sclog('Sending [' + msg + '] delay ' + delay + ' msec to index ' + outIndex);
+    let port: any = this.outPorts[outIndex].port;
+    if (port) { // MIDI
+      let timeStamp: number = window.performance.now() + delay;
+      port.send(msg, timeStamp);
+      this.sclog('timeStamp = ' + timeStamp + ' msec');
+    } else { // WML
+      let startTime: number = this.aCtx.currentTime + (delay / 1000);
+      this.clck.setTimeout(() => {this.sWml.processMidiMessage(msg);}, delay / 1000);
+      this.sclog('startTime = ' + startTime + ' sec');
+    }
+  }
+  sendAt(msg: any, at: number = this.aCtx.currentTime, outIndex: number = this._dfltOutIdx): void { // to be called by this.mEng
+    // at in seconds
+    if (! at)
+      at = this.aCtx.currentTime;
+    this.sclog('Sending [' + msg + '] to index ' + outIndex + ' at ' + at + ' sec');
+    let port: any = this.outPorts[outIndex].port;
+    if (port) { // MIDI
+      let timeStamp: number = at / 1000;
+      port.send(msg, timeStamp);
+    } else { // WML
+      let startTime: number = at;
+      this.clck.callbackAtTime(() => {this.sWml.processMidiMessage(msg);}, startTime);
+    }
   }
 
   //----------------------------------------------------------------------------
@@ -2644,21 +2741,21 @@ export class WebAudioMidi {
   listMIDIAccessProperties(excludedType: string = ''): string {
     let str: string = 'MIDIAccess:\n';
 
-    if (! this._mAcc) {
-      str += '\t' + this._failureMsg;
+    if (! this.mAcc) {
+      str += '\t' + this.falrMsg;
       return str;
     }
 
-    for (let p in this._mAcc)
-      if (typeof this._mAcc[p] !== excludedType)
-	str += '\t' + p + ' (' + (typeof this._mAcc[p]) + '): "' + this._mAcc[p] + '"\n';
+    for (let p in this.mAcc)
+      if (typeof this.mAcc[p] !== excludedType)
+	str += '\t' + p + ' (' + (typeof this.mAcc[p]) + '): "' + this.mAcc[p] + '"\n';
 
     str += 'MIDIAccess.outputs:\n';
-    for(let p in this._mAcc.outputs)
-      if (typeof this._mAcc.outputs[p] !== excludedType)
-	str += '\t' + p + ' (' + (typeof this._mAcc.outputs[p]) + '): "' + this._mAcc.outputs[p] + '"\n';
+    for(let p in this.mAcc.outputs)
+      if (typeof this.mAcc.outputs[p] !== excludedType)
+	str += '\t' + p + ' (' + (typeof this.mAcc.outputs[p]) + '): "' + this.mAcc.outputs[p] + '"\n';
 
-    this._mAcc.outputs.forEach(function(output, key) {
+    this.mAcc.outputs.forEach(function(output, key) {
       str += 'MIDIOutput ' + key + ':\n';
       for(let p in output)
 	if (typeof output[p] !== excludedType)
@@ -2666,11 +2763,11 @@ export class WebAudioMidi {
     });
 
     str += 'MIDIAccess.inputs:\n';
-    for(let p in this._mAcc.inputs)
-      if (typeof this._mAcc.inputs[p] !== excludedType)
-	str += '\t' + p + ' (' + (typeof this._mAcc.inputs[p]) + '): "' + this._mAcc.inputs[p] + '"\n';
+    for(let p in this.mAcc.inputs)
+      if (typeof this.mAcc.inputs[p] !== excludedType)
+	str += '\t' + p + ' (' + (typeof this.mAcc.inputs[p]) + '): "' + this.mAcc.inputs[p] + '"\n';
 
-    this._mAcc.inputs.forEach(function(input, key) {
+    this.mAcc.inputs.forEach(function(input, key) {
       str += 'MIDIInput ' + key + ':\n';
       for(let p in input)
 	if (typeof input[p] !== excludedType)
@@ -2708,13 +2805,14 @@ export class WebAudioMidi {
 
   //================================================================================================
   // Tests
+
   runTests() {
-    let conlog = this._conlog;
-    this._conlog = true;
+    let cnlog = this.cnlog;
+    this.cnlog = true;
     this.testNoteToKey();
     this.testKeyToNote();
     alert('WebAM tests completed. (See console log or Ctrl+Shift+J in Chrome.)');
-    this._conlog = conlog;
+    this.cnlog = cnlog;
   }
   testNoteToKey() {
     this.clog('Test noteToKey():');
@@ -2759,16 +2857,20 @@ export class WebAudioMidi {
   //================================================================================================
   // Private Methods
 
-  private clog(...args) {
-    if (this._conlog)
+  private clog(...args): void {
+    if (this.cnlog)
+      console.log('WAM: ' + args.join(' '));
+  }
+  private sclog(...args): void {
+    if (this.scnlog)
       console.log('WAM: ' + args.join(' '));
   }
   private storeDevices(): void {
     // The index is the key or ID
-    this._mAcc.outputs.forEach((device, key) => {
+    this.mAcc.outputs.forEach((device, key) => {
       this.outDevices[key] = device;
     });
-    this._mAcc.inputs.forEach((device, key) => {
+    this.mAcc.inputs.forEach((device, key) => {
       this.inDevices[key] = device;
     });
   }
@@ -2780,7 +2882,7 @@ export class WebAudioMidi {
       this._dfltOutIdx = idx;
 
     for (let d in this.outDevices)
-      this.outPorts[d] = new MidiPort(this.outDevices[d], this._mAcc.outputs.get(d));
+      this.outPorts[d] = new MidiPort(this.outDevices[d], this.mAcc.outputs.get(d));
     for (let d in this.inDevices)
       this.inPorts[d] = new MidiPort(this.inDevices[d]);
   }
@@ -2793,7 +2895,7 @@ export class WebAudioMidi {
   }
   private startLoggingMidiInput(deviceId: number = -1): void {
     if (deviceId < 0)
-      this._mAcc.inputs.forEach((input) => {input.onmidimessage = (event) => {
+      this.mAcc.inputs.forEach((input) => {input.onmidimessage = (event) => {
 	if (! (event.type === 'midimessage' && event.data != '248' && event.data != '254'))
 	  return;
 	this.outPorts[this._thruOutIdx].port.send(event.data);
@@ -2816,19 +2918,415 @@ export class WebAudioMidi {
       event.target.id + ' (' + event.target.name + ') with timeStamp ' + event.timeStamp + ' (' + event.data.length +
       ' bytes): ' + event.data;
   }
+}
 
-  private send(msg: any, delay: number, outIndex: number): void {
-    // delay in milliseconds
-    this.clog('Sending [' + msg + '] delay ' + delay + ' msec to index ' + outIndex);
-    let port: any = this.outPorts[outIndex].port;
-    if (port) { // MIDI
-      let timeStamp: number = window.performance.now() + delay;
-      port.send(msg, timeStamp);
-      this.clog('timeStamp = ' + timeStamp + ' msec');
-    } else { // WML
-      let startTime: number = this._aCtx.currentTime + (delay / 1000);
-      this.clock.setTimeout(() => {this._wml.processMidiMessage(msg);}, delay / 1000);
-      this.clog('startTime = ' + startTime + ' sec');
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+interface SendAtIntf {
+  (msg: any, at: number, outIndex: number): void;
+}
+
+interface WebamIntf {
+  conolog  : boolean;
+  sconolog : boolean;
+  audioCtx : any;
+  wClock   : any;
+
+  dfltOutIdx     : number;
+  dfltNoteOnVel  : number;
+  dfltNoteOffVel : number;
+  dfltChnl       : number;
+
+  sendAt : SendAtIntf;
+}
+
+//------------------------------------------------------------------------------
+
+interface TrackIntf {
+  program     ?: number;
+  channel     ?: number;
+  pitchChange ?: boolean;
+  outIndex    ?: number;
+  repeat      ?: number;
+  notes        : (any[])[]; // [note or [notes], duration in fraction, velocity]
+  // if note is negative, it is rest
+
+  quanNotes ?: (any[])[]; // for MusicEngine to generate: durations are in quantization
+}
+
+interface TuneIntf {
+  tempo       ?: number;
+  numerator   ?: number;
+  denominator ?: number;
+  tracks       : TrackIntf[];
+
+  quanLength ?: number; // for MusicEngine to generate: tune length in quantization
+}
+
+//------------------------------------------------------------------------------
+
+class NoteOffData {
+  constructor(public note: number, public chnl, public outIdx: number) {}
+}
+
+enum State {Stop, Play, Pause};
+enum Update {Quantize, Beat, Measure};
+
+class MusicEngine {
+  private cnlog: boolean = false; // flag whether console log is printed or not
+  private aCtx : any     = null;  // Audio Context (for currentTime)
+
+  private stte     : State  = State.Stop; // state
+  private quanPqn  : number = 24;         // quantization per quarter note
+  private lookaTime: number = 0.020;      // look ahead time (sec)
+
+  private tmpo: number = 120; // bpm (beats per minute)
+  private nmrt: number = 4;   // numerator (beat) in time signature
+  private dnmt: number = 4;   // denominator (note) in time signature
+
+  private frmReq     : number = 0;  // frame request
+  private quanEph    : number = 0;  // quantization epoch (sec)
+  private startEph   : number = 0;  // epoch when start() occurs (sec)
+  private quanCtr    : number = 0;  // quantization counter
+  private quanCtrStop: number = 0;  // quantization counter for Stop
+  private beatCtr    : number = -1; // beat counter
+  private measCtr    : number = -1; // measure counter
+  private phrsCtr    : number = 0;  // phrase counter
+
+  private currTune: TuneIntf = null;
+  private tuneTimes: number  = 1;
+
+  private noteOffQ: (NoteOffData[])[] = []; // note off queue
+
+  private dummy: number = 0;
+  private dummyMax: number = 0;
+
+  constructor(private wam: WebamIntf) {
+    if (this.wam.conolog)
+      this.cnlog = true;
+
+    this.changeStateTo(State.Stop);
+    this.quanPerQuarterNote = this.quanPqn;
+    this.lookaheadTime      = this.lookaTime;
+
+    this.tempo       = this.tmpo;
+    this.numerator   = this.nmrt;
+    this.denominator = this.dnmt;
+
+    this.initialize();
+  }
+  private initialize(): void {
+    this.quanEph     = 0;
+    this.quanCtr     = 0;
+    this.quanCtrStop = 0;
+    this.beatCtr     = -1;
+    this.measCtr     = -1;
+    this.phrsCtr     = 0;
+
+    if (this.aCtx)
+      this.wam.wClock.stop();
+  }
+
+  //----------------------------------------------------------------------------
+
+  get conolog(): boolean {
+    return this.cnlog;
+  }
+  set conolog(bln: boolean) {
+    this.cnlog = bln;
+  }
+  get webAM(): WebamIntf {
+    return this.wam;
+  }
+
+  get quanPerQuarterNote(): number {
+    return this.quanPqn;
+  }
+  set quanPerQuarterNote(num: number) {
+    num = parseInt(num.toString());
+    if (num > 0) {
+      this.quanPqn = num;
+      this.clog('quanPqn = ' + this.quanPqn);
+    }
+  }
+  get lookaheadTime(): number {
+    return this.lookaTime;
+  }
+  set lookaheadTime(num: number) {
+    if (num > 0) {
+      this.lookaTime = num;
+      this.clog('lookaheadTime = ' + this.lookaTime + ' sec');
+    }
+  }
+  get numerator(): number {
+    return this.nmrt;
+  }
+  set numerator(num: number) {
+    num = parseInt(num.toString());
+    if (num > 0) {
+      this.nmrt = num;
+      this.clog('time sig = ' + this.nmrt + '/' + this.dnmt);
+    }
+  }
+  get denominator(): number {
+    return this.dnmt;
+  }
+  set denominator(num: number) {
+    num = parseInt(num.toString());
+    if (num > 0) {
+      this.dnmt = num;
+      this.clog('time sig = ' + this.nmrt + '/' + this.dnmt);
+    }
+  }
+
+  get tempo(): number {
+    return this.tmpo;
+  }
+  set tempo(num: number) {
+    if (num > 0) { // can be fraction
+      this.tmpo = num;
+      this.clog('tempo = ' + this.tmpo + ' bpm');
+    }
+  }
+
+  //----------------------------------------------------------------------------
+
+  start(times: number = 1): void {
+    if (this.stte != State.Stop)
+      return;
+    this.changeStateTo(State.Play);
+    this.tuneTimes = times;
+    this.wam.wClock.start();
+    this.tuneProgramChange();
+    this.scheduleFrame();
+  }
+  pause(): void {
+    if (this.stte != State.Play)
+      return;
+    this.changeStateTo(State.Pause);
+    this.cancelFrame();
+    this.quanEph = 0;
+  }
+  resume(): void {
+    if (this.stte != State.Pause)
+      return;
+    this.changeStateTo(State.Play);
+    this.scheduleFrame();
+  }
+  stop(): void { // this is a forced Stop
+    if (this.stte == State.Stop)
+      return;
+    this.changeStateTo(State.Stop);
+    this.cancelFrame();
+    this.initialize();
+  }
+
+  load(tune: TuneIntf): void {
+    if (tune.tempo === undefined)
+      tune.tempo = -120;
+    if (tune.numerator === undefined)
+      tune.numerator = -4;
+    if (tune.denominator === undefined)
+      tune.denominator = -4;
+
+    this.tempo       = Math.abs(tune.tempo);
+    this.numerator   = Math.abs(tune.numerator);
+    this.denominator = Math.abs(tune.denominator);
+
+    let quan = this.quanPqn;
+    let measLen = Math.abs(Math.round(tune.numerator * (quan * 4 / tune.denominator)));
+    tune.quanLength = measLen;
+
+    for (let t of tune.tracks) {
+      if (t.channel === undefined)
+	t.channel = this.wam.dfltChnl;
+      if (t.pitchChange === undefined)
+	t.pitchChange = true;
+      if (t.outIndex === undefined)
+	t.outIndex = this.wam.dfltOutIdx;
+
+      t.quanNotes = [];
+      let q: number = 0; // quantization at
+      let d: number; // duration
+      for (let n of t.notes) {
+	if (n[1])
+	  d = n[1] * 4 * quan;
+	else
+	  d = quan; // default duration
+	if (n[2] === undefined)
+	  n[2] = -1; // default velocity
+	if (n[0] < 0) {
+	  n[2] = 0; // rest
+	  n[0] = 0;
+	}
+	t.quanNotes[q] = [n[0], d, n[2]];
+	q += d;
+      }
+      t.quanNotes.length = q;
+      while (tune.quanLength < t.quanNotes.length)
+	tune.quanLength += measLen;
+    }
+    this.currTune = tune;
+  }
+
+  //----------------------------------------------------------------------------
+
+  webamIsReady(): void { // to be called by this.wam
+    this.aCtx = this.wam.audioCtx;
+  }
+
+  //================================================================================================
+  // Private Methods
+
+  private clog(...args): void {
+    if (this.cnlog)
+      console.log('ME: ' + args.join(' '));
+  }
+  private changeStateTo(st: State): void {
+    this.stte = st;
+    this.clog('state = ' + State[this.stte]);
+  }
+
+  //----------------------------------------------------------------------------
+
+  // The setTimeout part
+  private scheduleFrame(): void {
+    this.frmReq = (<any>(window.requestAnimationFrame(() => { // using requestAnimationFrame
+      this.scheduleFrame();
+    }))).data.handleId; // for TypeScript
+//    })); // for JavaScript
+    this.scheduleEpoch(this.aCtx.currentTime); // using AudioContext.currentTime
+  }
+  private cancelFrame(): void {
+    if (this.frmReq) {
+      window.cancelAnimationFrame(this.frmReq);
+      this.frmReq = 0;
+    }
+  }
+
+  // The lookahead part
+  private scheduleEpoch(currTime: number): void {
+    // TBR
+    if (this.dummy) {
+      if (this.dummyMax < currTime - this.dummy)
+	this.dummyMax = currTime - this.dummy;
+//      console.log(currTime + ' ' + (currTime - this.dummy) + ' ' + this.dummyMax);
+    }
+    this.dummy = currTime;
+
+    if (! this.quanEph) {
+      this.quanEph = currTime;
+      this.startEph = this.quanEph;
+    }
+    let quanTime = (60 / this.tmpo) / (this.quanPqn * 4 / this.dnmt);
+    let lookaheadEph = currTime + this.lookaTime;
+
+    while (this.quanEph < lookaheadEph && ! this.stopScheduled()) {
+      this.handleNoteOffQ(this.quanCtr);
+
+      if (Math.round(this.quanCtr % (this.quanPqn * 4 / this.dnmt)) == 0) {
+	this.beatCtr++;
+	if (this.beatCtr % this.nmrt == 0) {
+	  this.measCtr++;
+	  this.beatCtr = 0;
+	  this.quanUpdate(Update.Measure);
+	} else
+	  this.quanUpdate(Update.Beat);
+      } else
+	this.quanUpdate(Update.Quantize);
+      this.quanEph += quanTime;
+      this.quanCtr++;
+    }
+
+    if (this.stopScheduled())
+      this.sendStop(this.quanEph);
+  }
+
+  //----------------------------------------------------------------------------
+
+  private stopScheduled(): boolean {
+    if (this.quanCtrStop && this.quanCtr >= this.quanCtrStop)
+      return true;
+    else
+      return false;
+  }
+
+  private quanUpdate(upd: Update): void {
+    // TBR
+    if (upd == Update.Beat || upd == Update.Measure)
+      console.log('Meas ' + (this.measCtr + 1) + ' beat ' + (this.beatCtr + 1));
+
+    if (! this.currTune)
+      return;
+    let quanCtr: number = this.quanCtr % this.currTune.quanLength;
+
+    for (let t of this.currTune.tracks) {
+      let pos: number = quanCtr % t.quanNotes.length;;
+      if (t.repeat && t.repeat > 0)
+	if (Math.floor(quanCtr / t.quanNotes.length) >= t.repeat)
+	  pos = t.quanNotes.length;
+      let n = t.quanNotes[pos];
+      if (n) {
+	if (n[0] >= 0)
+	  this.sendNote(n[0], n[1], n[2], t.channel, t.pitchChange, t.outIndex);
+      }
+    }
+
+    if ((quanCtr + 1) % this.currTune.quanLength == 0) { // at the end of the tune
+      this.phrsCtr++;
+      if (this.tuneTimes && this.tuneTimes <= this.phrsCtr)
+	this.quanCtrStop = quanCtr + 1; // stop
+    }
+  }
+
+  //----------------------------------------------------------------------------
+
+  private
+  sendNote(note: number, dura: number, vel: number = this.wam.dfltNoteOnVel,
+	   chnl: number = this.wam.dfltChnl, pitchChg: boolean = true, outIdx: number = this.wam.dfltOutIdx): void {
+	     // duration is in quantization
+
+	     if (vel < 0)  // it is a default velocity
+	       vel = this.wam.dfltNoteOnVel;
+	     else if (vel === 0) // it is a rest
+	       return;
+
+	     this.wam.sendAt([0x90 + chnl, note, vel], this.quanEph, outIdx);
+
+	     let ctr: number = this.quanCtr + dura - 1;
+	     if (! this.noteOffQ[ctr])
+	       this.noteOffQ[ctr] = [];
+	     this.noteOffQ[ctr].push(new NoteOffData(note, chnl, outIdx));
+	   }
+
+  private handleNoteOffQ(ctr: number): void {
+    if (this.noteOffQ[ctr]) {
+      let q: NoteOffData[] = this.noteOffQ[ctr];
+      while(q[0]) {
+	let n: NoteOffData = q.shift();
+	this.wam.sendAt([0x80 + n.chnl, n.note, this.wam.dfltNoteOffVel], this.quanEph, n.outIdx);
+      }
+      delete this.noteOffQ[ctr];
+    }
+  }
+
+  private sendStop(at: number): void {
+    this.wam.wClock.callbackAtTime(() => {this.stop();}, at);
+  }
+
+  private sendProgramChange(prog: number = 0, chnl: number = 0, at: number = 0, outIdx: number = this.wam.dfltOutIdx): void {
+    this.wam.sendAt([0xC0 + chnl, prog], at, outIdx);
+  }
+  private tuneProgramChange(at: number = 0): void {
+    if (! this.currTune)
+      return;
+    for (let t of this.currTune.tracks) {
+      if (t.program !== undefined)
+	this.sendProgramChange(t.program, t.channel, at, t.outIndex);
     }
   }
 }

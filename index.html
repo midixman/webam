@@ -15,8 +15,8 @@
         console.log(wam.listOutPorts('function'));
         console.log(wam.listInPorts('function'));
 
-        alert('Will play soundTestPercussion()...');
-        wam.soundTestPercussion(500);
+        if (confirm('Play soundTestPercussion?'))
+          wam.soundTestPercussion(500);
 
         /*
         wam.noteOn (0, 60);
@@ -31,14 +31,14 @@
         clock.setTimeout(function() {wam.noteOn (0, 60);}, 4);
         clock.setTimeout(function() {wam.noteOff(0, 60);}, 5);
 
-        alert('Will play soundTestPercussion()...');
-        wam.soundTestPercussion(500);
-        alert('Will play soundTestPrograms()...');
-        wam.soundTestPrograms();
-        alert('Will play soundTestNotes()...');
-        wam.soundTestNotes(500);
-        alert('Will play soundTestVelocities()...');
-        wam.soundTestVelocities(500);
+        if (confirm('Will play soundTestPercussion?'))
+          wam.soundTestPercussion(500);
+        if (confirm('Will play soundTestPrograms?'))
+          wam.soundTestPrograms();
+        if (confirm('Will play soundTestNotes?'))
+          wam.soundTestNotes(500);
+        if (confirm('Will play soundTestVelocities'))
+          wam.soundTestVelocities(500);
         */
       }
     </script>
