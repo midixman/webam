@@ -181,6 +181,8 @@ wam.wClock.start();
 ```
 before you call those methods.
 
+Because `requestAnimationFrame()` is used in _MusicEngine_ to provide the timeouts, one drawback is that the WebAM browser tab has to be in focus for it to play normally (i.e., it cannot be in the background). 
+
 ## API
 
 ### Member Accesses
