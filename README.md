@@ -1,8 +1,8 @@
 WebAM
 ================================================================================================================================
-WebAM is "**Web** **A**udio and **M**IDI" in TypeScript/JavaScript; currently the emphasis is on [General MIDI](https://en.wikipedia.org/wiki/General_MIDI) interactive playback using [_SoundFont_](https://en.wikipedia.org/wiki/SoundFont) (__.sf2__) files (and for now it is not intended to play [General MIDI files](https://www.cs.cmu.edu/~music/cmsip/readings/Standard-MIDI-file-format-updated.pdf)!)
+WebAM is "**Web** **A**udio and **M**IDI" in [TypeScript](https://www.typescriptlang.org/)/JavaScript; currently the emphasis is on [General MIDI](https://en.wikipedia.org/wiki/General_MIDI) interactive playback using [_SoundFont_](https://en.wikipedia.org/wiki/SoundFont) (__.sf2__) files (and for now it is not intended to play [General MIDI files](https://www.cs.cmu.edu/~music/cmsip/readings/Standard-MIDI-file-format-updated.pdf)!)
 
-Currently the timing is provided via [WAAClock](https://github.com/sebpiq/WAAClock) and the SoundFont processing is based on [sf2synth.js](https://github.com/gree/sf2synth.js) (with several fixes).  The API tries to follow that in [MIDI.js](https://github.com/mudcube/MIDI.js/).
+Currently the timing is provided via [WAAClock](https://github.com/sebpiq/WAAClock), and the SoundFont processing is based on [sf2synth.js](https://github.com/gree/sf2synth.js) (with several fixes).  The API tries to follow that in [MIDI.js](https://github.com/mudcube/MIDI.js/).
 
 The basic technologies for WebAM are described in [Web MIDI API](https://webaudio.github.io/web-midi-api/) and [Web Audio API](https://webaudio.github.io/web-audio-api/).
 
@@ -14,12 +14,17 @@ To incorporate it in an HTML file, a JavaScript file has been created with
 
     tsc webam.ts -t es5
 
-with _tsc v2.0.3_ and taking the "exports" line
+with _tsc v2.0.3_ and taking out the "exports" line
 ```js
 exports.WebAudioMidi = WebAudioMidi;
 ```
-out from the resulting __webam.js__.
-An HTML file (__index.html__) has been provided as an example.  WebAM was tested using only the _Chrome_ browser (primarily version 54.0.2840.71 m (64-bit) on Windows PC and other versions on Android devices).
+and `data.handleId`
+```js
+this.frmReq = (window.requestAnimationFrame(function () {
+    _this.scheduleFrame();
+})).data.handleId;
+```
+from the resulting __webam.js__.  An HTML file (__index.html__) has been provided as an example.  WebAM was tested so far using only the _Chrome_ browser (primarily version 54.0.2840.71 m (64-bit) on Windows PC and other versions on Android devices).
 
 ## How to Use
 In your HTML:
@@ -32,12 +37,12 @@ In your script:
 ```js
 let wam = new WebAudioMidi(callback, 'sf/Chaos_V20.sf2');
 function callback() {
-  wam.runTests();
+  wam.runTests(); // an example
   ...
 }
 ```
 
-You have to provide a General MIDI SoundFont file, and in this example, the file is _Chaos_V20.sf2_ which is located in the directory _sf_ (which can be obtained from [Some GM SoundFonts at SynthFont website](http://www.synthfont.com/soundfonts.html)).
+You have to provide a General MIDI SoundFont file, and in this example, the file is __Chaos_V20.sf2__ (which can be obtained from [Some GM SoundFonts at SynthFont website](http://www.synthfont.com/soundfonts.html)) which is located in the directory __sf__.
 
 Instead of using the _delay_ argument in the functions (see the API for Sound Generation methods), you can also use [WAAClock](https://github.com/sebpiq/WAAClock) directly for the timings; for example:
 ```js
@@ -53,14 +58,14 @@ The latest was [WAAClock-latest.js](https://github.com/sebpiq/WAAClock/blob/mast
 * [From the included MusicEngine.html](https://midixman.github.io/MusicEngine.html)
 
 ## Installation in Windows
-In Windows you can use WebAM using the Web MIDI API part (instead of Web Audio API) by installing [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth); some explanation is provided at [Enabling Sound in Windows at DrawMusic website](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/).  Hopefully, the Windows built-in _Microsoft GS Wavetable SW Synth_ will be re-enabled by Google at some time in the future as discussed in "[Web MIDI Does Not Work on 43.0.2357.130](https://bugs.chromium.org/p/chromium/issues/detail?id=503270)".
+In Windows you can use WebAM using the Web MIDI API part (instead of Web Audio API) by installing [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth); some explanations are provided at [Enabling Sound in Windows at DrawMusic website](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/).  Hopefully, the Windows built-in _Microsoft GS Wavetable SW Synth_ will be re-enabled by Google at some time in the future as discussed in "[Web MIDI Does Not Work on 43.0.2357.130](https://bugs.chromium.org/p/chromium/issues/detail?id=503270)".
 
-Without any MIDI devices connected, WebAM will show a notification in the beginning, such as "No real MIDI output ports. (Sound will be generated via SoundFont.)".
+Without any MIDI devices connected, WebAM will show a notification in the beginning, such as "No real MIDI output ports. (Sounds will be generated via SoundFont.)".
 
 ## SoundFont Files
-For WebAM to work on any device under Chrome browser, we have to provide a General MIDI SoundFont file.  Here, we have used _Chaos_V20.sf2_ (11.9 MB).  In [Enabling Sound in Windows](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/), they use _TimGM6mb.sf2_ (5.9 MB) which is one of the smallest General MIDI SoundFont files.  [sf2synth.js](https://github.com/gree/sf2synth.js), the current basis for the WebAM's Web Audio API part, uses _A320U.sf2_ (9.5 MB).
+For WebAM to work on any device under Chrome browser, you have to provide a General MIDI SoundFont file.  Here, we have used __Chaos_V20.sf2__ (11.9 MB).  In [Enabling Sound in Windows](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/), they use __TimGM6mb.sf2__ (5.9 MB) which is one of the smallest General MIDI SoundFont files.  [sf2synth.js](https://github.com/gree/sf2synth.js), the current basis for the WebAM's Web Audio API part, uses __A320U.sf2__ (9.5 MB).
 
-_Chaos_V20.sf2_ was selected because it is relatively small (some General MIDI SoundFont file sizes are about 1 TB!) and in my opinion, it has the best percussion sounds relative to its size.  You may experiment with other General MIDI SoundFont files by searching them in the Internet.
+__Chaos_V20.sf2__ was selected because it is relatively small (some General MIDI SoundFont file sizes are about 1 TB!) and in my opinion, it has the best percussion sounds relative to its size.  You may experiment with other General MIDI SoundFont files by searching them in the Internet.
 
 ## API
 ### Creation
@@ -80,7 +85,7 @@ _callbackFunction_ is a function that WebAM will call(back) once it is ready.
 
 _soundfontURL_ is the URL for the SoundFont file.
 
-In the optional _WebamOptions_, "`sysex`" and "`software`" correspond to those in Section 4.2 of Web MIDI API W3C Editor's Draft 09 June 2016 (http://webaudio.github.io/web-midi-api/), whereas "`conolog`" specifies whether WebAM prints to the console log.  If "`engine`" is `true` then WebAM also creates a _MusicEngine_.  All these by default are `false`.
+In the optional _WebamOptions_, "`sysex`" and "`software`" correspond to those in Section 4.2 of Web MIDI API W3C Editor's Draft 09 June 2016 (http://webaudio.github.io/web-midi-api/), whereas "`conolog`" specifies whether WebAM prints to the console log.  If "`engine`" is `true` then WebAM also creates a _MusicEngine_ (see next section).  All these by default are `false`.
 
 Example:
 ```js
@@ -101,10 +106,10 @@ musicEngn : MusicEngine // music engine
 conolog       : boolean // whether WebAM prints to the console log
 sconolog      : boolean // whether WebAM prints to the console log for sending (MIDI) data; by default it is false
 
-dfltOutIdx    : number  // default output port index (-1); negative means the last one
-dfltNoteOnVel : number  // default note on velocity  (80)
-dfltNoteOffVel: number  // default note off velocity (64)
-dfltChnl      : number  // default MIDI channel      (0)
+dfltOutIdx    : number  // default output port index      (-1); negative means the last one
+dfltNoteOnVel : number  // default MIDI note on velocity  (80)
+dfltNoteOffVel: number  // default MIDI note off velocity (64)
+dfltChnl      : number  // default MIDI channel           (0)
 ```
 
 ### List Methods
@@ -155,7 +160,7 @@ While the _delay_ (relative time) is in milliseconds, the _at_ (absolute time) i
 
 Music Engine
 ================================================================================================================================
-If you want tighter timings (or if you don't want to manage timing by yourself), the _WebamOptions_ also includes `engine`, which if is set to `true`, then WebAM also creates a _MusicEngine_:
+If you want tighter timings (or if you don't want to manage timings by yourself), the _WebamOptions_ also includes `engine`, which if is set to `true`, then WebAM also creates a _MusicEngine_:
 ```js
 let wam = new WebAudioMidi(callback, 'sf/Chaos_V20.sf2', {engine: true});
 let me = wam.musicEngn;
@@ -172,6 +177,7 @@ However, if _MusicEngine_ is included, and you want to use WebAM Sound Generatio
 ```js
 wam.wClock.start();
 ```
+before you call those methods.
 
 ## API
 
@@ -186,13 +192,13 @@ conolog: boolean // whether MusicEngine prints to the console log
 quanPerQuarterNote: number // quantizationn per quarter note (24)
 lookaheadTime     : number // lookahead time (sec)
 
-tempo      : number // in bpm (beats per minute); must be greater than zero
+tempo      : number // in bpm (beats per minute); must be greater than zero; can be fraction
 numerator  : number // numerator in time signature (how many beats in each measure)
 denominator: number // denominator in time signature (note value for each beat)
 ```
 
 ### The "Tune" Structure
-To play something with _MusicEngine_, you have to create a "_tune_", and `load()` it.  A _tune_ is an object which consists of arbitrary number of tracks, and is described below:
+To play something with _MusicEngine_, you have to create a "_tune_", and _load( )_ it.  A _tune_ is an object which consists of arbitrary number of tracks, as described below:
 ```js
 load(TuneInterface tune): void
 
@@ -210,7 +216,7 @@ dictionary TrackInterface {
   optional boolean pitchChange; // TBD: for transpose and octave (by default true)
   optional number  outIndex;    // output port index (by default wam.dfltOutIdx)
   optional number  repeat;      // how many times this track will be repeated if shorter than other tracks
-                                // if less than 1, it means it will be repeated for the whole tune length
+                                // if less than 1, it implies it will be repeated for the whole tune length
 
   NoteInterface    notes[];     // array of NoteInterface
 }
@@ -223,7 +229,7 @@ array NodeInterface [
 ```
 A _NoteInterface_ is an array which must have at least one member (_note_) and at most three members (with _duration_ and _velocity_):
 * The _note_ represents a MIDI note (0 - 127).  If it is negative, it means it is a rest (or silence).
-* The _duration_ represents the duration of the note in [note value](https://en.wikipedia.org/wiki/Note_value), such as 1/4, 1/8, and 1/2.  If it is omitted, by default it is equal to 1/4 (quarter note).
+* The _duration_ represents the duration of the note in [note value](https://en.wikipedia.org/wiki/Note_value), such as 1/4, 1/8, or 1/2.  If it is omitted, by default it is equal to 1/4 (quarter note).
 * The _velocity_ represents a MIDI velocity (0 - 127).  If it is omitted, by default it is equal to `wam.dfltNoteOnVel`.  And a _velocity_ of `0` also represents a rest.
 
 Example:
@@ -249,9 +255,9 @@ In the `start()` method, the _times_ argument specifies how many times the _tune
 Future Developments
 ================================================================================================================================
 * It seems that music in Java/Clojure has progressed much more significantly; therefore the _string_ input notation for the Music Engine _tune_ may try to follow that in [JFugue](http://www.jfugue.org/), [semitone](https://github.com/benwbooth/semitone), [Alda](http://blog.djy.io/making-midi-sound-awesome-in-a-clojure-program/), and/or [Overtone](http://overtone.github.io/).
-* It has been the objective of this effort to make the sound outputs to be identical as those of [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth). [sf2synth.js](https://github.com/gree/sf2synth.js) is a great first attempt, but if you compare them in Windows, the sound outputs of them are different (VirtualMIDISynth sounds better). Hopefully, [Web Audio API](https://webaudio.github.io/web-audio-api/) contains the complete API that makes it possible to tweak the JavaScript codes so that the two sound identical.  (The drawbacks of VirtualMIDISynth are first, it has to be installed by the user, and second, it works only in Windows, whereas WebAM will work on any Chrome browser without any further installations.)
+* It has been the original objective of this effort is to make the sound outputs to be identical as those of [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth). [sf2synth.js](https://github.com/gree/sf2synth.js) is a great first attempt, but if you compare them in Windows, the sound outputs of them are different (VirtualMIDISynth sounds better). Hopefully, [Web Audio API](https://webaudio.github.io/web-audio-api/) contains the complete API that makes it possible to tweak the JavaScript codes so that the two sound identical.  (The drawbacks of VirtualMIDISynth are first, it has to be installed manually by the user, and second, it works only in Windows, whereas WebAM will work on any Chrome browser without any further installations.)
 
-Some References
+Other References
 ================================================================================================================================
 * Wikipedia provides [comparison of free software for audio](https://en.wikipedia.org/wiki/Comparison_of_free_software_for_audio).
 * YouTube provides some background in computer music in [Programming Music with Overtone - Sam Aaron](https://www.youtube.com/watch?v=imoWGsipe4k).

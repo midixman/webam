@@ -2174,7 +2174,7 @@ var WebAudioMidi = (function () {
             _this.putDevicesIntoPorts();
             _this.startLoggingMidiInput();
             if (_this.outPorts.length === 0)
-                alert('No real MIDI output ports. (Sound will be generated via SoundFont.)');
+                alert('No real MIDI output ports. (Sounds will be generated via SoundFont.)');
             if (_this.aCtx) {
                 if (_this.mEng)
                     _this.mEng.webamIsReady();

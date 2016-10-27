@@ -2552,7 +2552,7 @@ export class WebAudioMidi {
 	this.putDevicesIntoPorts();
 	this.startLoggingMidiInput();
 	if (this.outPorts.length === 0)
-	  alert('No real MIDI output ports. (Sound will be generated via SoundFont.)');
+	  alert('No real MIDI output ports. (Sounds will be generated via SoundFont.)');
 
 	if (this.aCtx) {
 	  if (this.mEng)
