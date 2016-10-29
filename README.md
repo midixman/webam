@@ -73,6 +73,8 @@ For WebAM to work on any device under Chrome browser, you have to provide a Gene
 
 __Chaos_V20.sf2__ was selected because it is relatively small (some General MIDI SoundFont file sizes are about 1 TB!) and in my opinion, it has the best percussion sounds relative to its size.  You may experiment with other General MIDI SoundFont files by searching them in the Internet.
 
+The SoundFont file format is described in "[SoundFont Technical Specification, Version 2.04, February 3, 2006](http://www.synthfont.com/sfspec24.pdf)".  A white paper by Dave Rossum is available as "[The SoundFont 2.0 File Format](http://freepats.zenvoid.org/sf2/sf20white.pdf)".
+
 ## API
 ### Creation
 
@@ -177,7 +179,7 @@ Or, we can combine them into a single line:
 let me = (new WebAudioMidi(callback, 'sf/Chaos_V20.sf2', {engine: true})).musicEngn;
 ```
 
-The event scheduling in the music engine is based on the article "[A Tale of Two Clocks - Scheduling Web Audio with Precision](https://www.html5rocks.com/en/tutorials/audio/scheduling/)".
+The event scheduling in the music engine is based on the article "[A Tale of Two Clocks - Scheduling Web Audio with Precision](https://www.html5rocks.com/en/tutorials/audio/scheduling/)" by Chris Wilson.
 
 However, if _MusicEngine_ is included, and you want to use WebAM Sound Generation methods, you will have to start the clock manually first:
 ```js
