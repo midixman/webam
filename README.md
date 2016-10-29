@@ -61,6 +61,7 @@ The latest was [WAAClock-latest.js](https://github.com/sebpiq/WAAClock/blob/mast
 
 ## Similar Projects
 * [SimpleSoundFontSynthHost](https://github.com/notator/SimpleSoundFontSynthHost)
+* [Resident Sf2 Synth](https://github.com/notator/residentSf2Synth)
 
 ## Installation in Windows
 In Windows you can use WebAM using the Web MIDI API part (instead of Web Audio API) by installing [CoolSoft VirtualMIDISynth](http://coolsoft.altervista.org/en/virtualmidisynth); some explanations are provided at [Enabling Sound in Windows at DrawMusic website](http://www.drawmusic.com/howtowrite/Enabling-Sound-Windows/).  Hopefully, the Windows built-in _Microsoft GS Wavetable SW Synth_ will be re-enabled by Google at some time in the future as discussed in "[Web MIDI Does Not Work on 43.0.2357.130](https://bugs.chromium.org/p/chromium/issues/detail?id=503270)".
